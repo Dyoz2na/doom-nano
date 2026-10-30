@@ -53,6 +53,8 @@ static const int JOYSTICK_CENTER_Y = 486;
 
 // Ignore small variations around the resting position.
 static const int JOYSTICK_DEADZONE = 120;
+// Joystick SW button: D2 connected to GND when pressed.
+static const uint8_t JOYSTICK_MENU_PIN = 2;
 
 void input_setup() {
   pinMode(JOYSTICK_X_PIN, INPUT);
@@ -60,6 +62,9 @@ void input_setup() {
 
   // Independent fire button: D10 connected to GND when pressed.
   pinMode(K_FIRE, INPUT_PULLUP);
+
+  // Use the Arduino's internal pull-up; no external resistor is needed.
+  pinMode(JOYSTICK_MENU_PIN, INPUT_PULLUP);
 }
 
 bool input_left() {
@@ -82,5 +87,9 @@ bool input_down() {
 
 bool input_fire() {
   return digitalRead(K_FIRE) == LOW;
+}
+
+bool input_menu() {
+  return digitalRead(JOYSTICK_MENU_PIN) == LOW;
 }
 #endif
