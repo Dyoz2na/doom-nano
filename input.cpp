@@ -2,14 +2,6 @@
 #include "input.h"
 #include "constants.h"
 
-#ifdef USE_INPUT_PULLUP
-  #define INPUT_MODE INPUT_PULLUP
-  #define INPUT_STATE LOW
-#else
-  #define INPUT_MODE INPUT
-  #define INPUT_STATE HIGH
-#endif
-
 #ifdef SNES_CONTROLLER
 uint16_t buttons = 0;
 
@@ -29,13 +21,11 @@ void input_setup() {
 }
 
 void getControllerData(void){
-  // Latch for 12us
   digitalWrite(DATA_LATCH, HIGH);
   delayMicroseconds(12);
   digitalWrite(DATA_LATCH, LOW);
   delayMicroseconds(6);
   buttons = 0;
-  // Retrieve button presses from shift register by pulling the clock high for 6us
   for(uint8_t i = 0; i < 16; ++i){
     digitalWrite(DATA_CLOCK, LOW);
     delayMicroseconds(6);
@@ -45,56 +35,52 @@ void getControllerData(void){
   }
 }
 
-bool input_left() {
-  return buttons & LEFT;
-};
+bool input_left()  { return buttons & LEFT; }
+bool input_right() { return buttons & RIGHT; }
+bool input_up()    { return buttons & UP; }
+bool input_down()  { return buttons & DOWN; }
+bool input_fire()  { return buttons & Y; }
+bool input_start() { return buttons & START; }
 
-bool input_right() {
-  return buttons & RIGHT;
-};
-
-bool input_up() {
-  return buttons & UP;
-};
-
-bool input_down() {
-  return buttons & DOWN;
-};
-
-bool input_fire() {
-  return buttons & Y;
-};
-
-bool input_start() {
-  return buttons & START;
-}
 #else
 
+// Analog joystick connections: VRx -> A0, VRy -> A1.
+// Measured joystick resting values: X = 527, Y = 486.
+static const int JOYSTICK_X_PIN = A0;
+static const int JOYSTICK_Y_PIN = A1;
+static const int JOYSTICK_CENTER_X = 527;
+static const int JOYSTICK_CENTER_Y = 486;
+
+// Ignore small variations around the resting position.
+static const int JOYSTICK_DEADZONE = 120;
+
 void input_setup() {
-  pinMode(K_LEFT, INPUT_MODE);
-  pinMode(K_RIGHT, INPUT_MODE);
-  pinMode(K_UP, INPUT_MODE);
-  pinMode(K_DOWN, INPUT_MODE);
-  pinMode(K_FIRE, INPUT_MODE);
+  pinMode(JOYSTICK_X_PIN, INPUT);
+  pinMode(JOYSTICK_Y_PIN, INPUT);
+
+  // Independent fire button: D10 connected to GND when pressed.
+  pinMode(K_FIRE, INPUT_PULLUP);
 }
 
 bool input_left() {
-  return digitalRead(K_LEFT) == INPUT_STATE;
-};
+  return analogRead(JOYSTICK_X_PIN) < (JOYSTICK_CENTER_X - JOYSTICK_DEADZONE);
+}
 
 bool input_right() {
-  return digitalRead(K_RIGHT) == INPUT_STATE;
-};
+  return analogRead(JOYSTICK_X_PIN) > (JOYSTICK_CENTER_X + JOYSTICK_DEADZONE);
+}
 
+// Default Y-axis convention: smaller ADC value = up, larger = down.
+// If your joystick is mounted in the opposite orientation, swap these comparisons.
 bool input_up() {
-  return digitalRead(K_UP) == INPUT_STATE;
-};
+  return analogRead(JOYSTICK_Y_PIN) < (JOYSTICK_CENTER_Y - JOYSTICK_DEADZONE);
+}
 
 bool input_down() {
-  return digitalRead(K_DOWN) == INPUT_STATE;
-};
+  return analogRead(JOYSTICK_Y_PIN) > (JOYSTICK_CENTER_Y + JOYSTICK_DEADZONE);
+}
 
 bool input_fire() {
-  return digitalRead(K_FIRE) == INPUT_STATE;
-};
+  return digitalRead(K_FIRE) == LOW;
+}
 #endif
