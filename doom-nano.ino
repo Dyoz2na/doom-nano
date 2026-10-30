@@ -826,7 +826,7 @@ void loopGamePlay() {
     #ifdef SNES_CONTROLLER
     if (input_start()) {
     #else
-    if (input_left() && input_right()) {
+    if (input_menu()) {
     #endif
       jumpTo(INTRO);
     }
