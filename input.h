@@ -23,6 +23,10 @@ bool input_left();
 bool input_right();
 bool input_fire();
 
+#ifndef SNES_CONTROLLER
+bool input_menu();
+#endif
+
 #ifdef SNES_CONTROLLER
 bool input_start();
 void getControllerData(void);
